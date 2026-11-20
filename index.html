@@ -11,7 +11,7 @@ html,body{margin:0;background:#0e0b16;color:#eee;font-family:PX,monospace;-webki
 #app{max-width:780px;margin:0 auto;padding:6px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 #stage{position:relative;border:3px solid #3a2f55;border-radius:6px;overflow:hidden;background:#000;touch-action:manipulation}
 #cv{display:block;width:100%;aspect-ratio:16/9;cursor:crosshair}
-#muteBtn{position:absolute;top:8px;right:54px;z-index:30;padding:4px 8px;font-size:16px;opacity:.85}
+#muteBtn{position:absolute;top:8px;right:54px;z-index:3;padding:4px 8px;font-size:16px;opacity:.85}
 #speech .nm{font-size:.72em;letter-spacing:1px;opacity:.95;margin-bottom:1px}
 #speech{position:absolute;white-space:normal;width:max-content;display:none;pointer-events:none;text-align:center;font-weight:700;line-height:1.2;max-width:84%;padding:4px 8px 5px;background:rgba(8,6,16,.68);border-radius:6px;box-sizing:border-box;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000,0 2px 0 #000}
 #toast{position:absolute;top:6px;left:50%;transform:translateX(-50%);background:#000c;border:1px solid #e9c46a;color:#ffe066;padding:4px 12px;border-radius:12px;font-size:13px;opacity:0;transition:opacity .3s;pointer-events:none;text-align:center;max-width:90%}
@@ -80,7 +80,11 @@ a.btn{display:block;text-align:center;text-decoration:none;color:#fff;background
  #verbs button{font-size:12px;padding:6px 2px}
  #inv{grid-template-columns:1fr 1fr}#inv button{font-size:10px;padding:4px;min-height:28px}
  #choices button{font-size:12px;padding:6px 7px}
- .cover img{max-height:52vh;object-fit:cover}
+  #home .card{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:14px;max-width:none;align-items:start}
+ #home .cover{grid-column:1;grid-row:1/12;margin:0}
+ #home .card>:not(.cover){grid-column:2}
+ .cover img{max-height:none;width:100%;height:auto;object-fit:contain}
+ #home .big{padding:9px;font-size:15px;margin:4px 0}
  .card h1{margin-top:2px}
 }
 </style>
@@ -815,8 +819,26 @@ const KEY={
 let GL=null;
 function active(h){const k=KEY[ROOM.id];const f=k&&k[h.id];if(!f)return false;try{return !!f(G.F);}catch(e){return false;}}
 window.markGlow=h=>{if(active(h))GL={h,t:performance.now()};};
+let SHOW=0,LAB=null;
+window.showAll=()=>{SHOW=performance.now();};
+window.markLabel=h=>{LAB={h,t:performance.now()};};
+function drawLabel(h,a,placed){
+ const[x,y,w,hh]=h.r;const c=cx;c.save();c.globalAlpha=a;c.font='bold 6px PX, monospace';
+ const tw=c.measureText(h.name).width+5;let lx=clamp(x+w/2-tw/2,2,W-tw-2),ly=clamp(y-9,2,H-11);
+ for(let k=0;k<6&&placed.some(p=>lx<p[0]+p[2]&&lx+tw>p[0]&&ly<p[1]+p[3]&&ly+9>p[1]);k++)ly=clamp(ly+9,2,H-11);
+ placed.push([lx,ly,tw,9]);
+ c.fillStyle='rgba(10,8,18,.82)';c.beginPath();c.moveTo(lx+2,ly);c.arcTo(lx+tw,ly,lx+tw,ly+9,2);c.arcTo(lx+tw,ly+9,lx,ly+9,2);c.arcTo(lx,ly+9,lx,ly,2);c.arcTo(lx,ly,lx+tw,ly,2);c.closePath();c.fill();
+ c.fillStyle='#ffe066';c.textBaseline='middle';c.fillText(h.name,lx+2.5,ly+4.8);c.restore();
+}
+function outline(h,a){const[x,y,w,hh]=h.r;cx.save();cx.globalAlpha=a;cx.strokeStyle='#ffe066';cx.fillStyle='rgba(255,226,110,.10)';cx.lineWidth=.7;cx.setLineDash([2,1.5]);cx.fillRect(x,y,w,hh);cx.strokeRect(x,y,w,hh);cx.restore();}
+function hints(ts){
+ const placed=[];
+ if(SHOW){const d=ts-SHOW;if(d>3200)SHOW=0;else{const a=Math.min(1,d/200,(3200-d)/500);
+  const hs=ROOM.hot.filter(h=>(!h.vis||h.vis())&&h.r[2]>0&&h.name);hs.forEach(h=>outline(h,a));hs.forEach(h=>drawLabel(h,a,placed));}}
+ if(LAB){const d=ts-LAB.t;if(d>1800||!ROOM.hot.includes(LAB.h))LAB=null;else{const a=Math.min(1,(1800-d)/400);outline(LAB.h,a*.8);drawLabel(LAB.h,a,placed);}}
+}
 window.glowDraw=ts=>{
- if(!G||G.over||speech)return;
+ if(!G||G.over)return;hints(ts);if(speech)return;
  let h=null,a=1;
  if(GL&&ts-GL.t<1500&&ROOM.hot.includes(GL.h)){h=GL.h;a=1-(ts-GL.t)/1500;}
  else if(mouseHover&&!mouseHover.isItem&&ROOM.hot.includes(mouseHover)&&active(mouseHover)){h=mouseHover;a=.8;}
@@ -829,6 +851,7 @@ window.glowDraw=ts=>{
 function renderVerbs(){
  const v=$('verbs');v.innerHTML='';
  VERBS.forEach(([k,l])=>{const b=document.createElement('button');b.textContent=l;b.dataset.v=k;b.onclick=()=>{if(!G||G.busy||G.over)return;G.verb=k;G.pending=null;updVerbs();updSentence();};v.appendChild(b);});
+ const eye=document.createElement('button');eye.textContent='👁 Oggetti';eye.onclick=()=>{if(G&&!G.busy&&!G.over&&window.showAll)showAll();};v.appendChild(eye);
  const p=document.createElement('button');p.textContent='📞 Daniele';p.dataset.v='phone';p.onclick=()=>runBusy(callDaniele);v.appendChild(p);
 }
 function updVerbs(){document.querySelectorAll('#verbs button').forEach(b=>b.classList.toggle('on',b.dataset.v===G.verb&&!G.pending));}
@@ -941,7 +964,7 @@ async function runBusy(fn){
  G.busy=false;G.verb='walk';G.pending=null;if(!G.over){updVerbs();updSentence();renderInv();}
 }
 function tap(px,py){
- const h=hit(px,py);if(h&&window.markGlow)markGlow(h);
+ const h=hit(px,py);if(h&&window.markGlow)markGlow(h);if(h&&!G.pending&&G.verb==='walk'&&window.markLabel)markLabel(h);
  if(G.pending){if(h)execute(G.pending.verb,h,G.pending.item);else{G.pending=null;G.verb='walk';updVerbs();updSentence();renderInv();}return;}
  const v=G.verb;
  if(v==='walk'){if(h&&h.exit)execute('walk',h);else walkTo(px,py);return;}
@@ -1000,9 +1023,9 @@ const mus=(()=>{const T={};let cur=null,muted=false;const VOL={intro:.55,game:.1
  function get(n){if(!T[n]){const a=new Audio(SRC[n]);a.loop=n!=='credits';a.preload='auto';T[n]=a;}return T[n];}
  function fade(a,to,ms,end){const from=a.volume,t0=performance.now();const iv=setInterval(()=>{const k=Math.min(1,(performance.now()-t0)/ms);a.volume=Math.max(0,Math.min(1,from+(to-from)*k));if(k>=1){clearInterval(iv);end&&end();}},50);}
  return{
-  play(n,ms){if(window.__FAST||cur===n)return;const old=cur&&T[cur];cur=n;
+  play(n,ms,keep){if(window.__FAST||cur===n)return;const old=cur&&T[cur];cur=n;
    if(old)fade(old,0,ms||1200,()=>{if(cur!==Object.keys(T).find(k=>T[k]===old))old.pause();});
-   if(!n)return;const a=get(n);a.currentTime=0;a.volume=0;a.muted=muted;const p=a.play();if(p&&p.catch)p.catch(()=>{cur=null;});fade(a,VOL[n],ms||1200);},
+   if(!n)return;const a=get(n);if(!keep)a.currentTime=0;a.volume=0;a.muted=muted;const p=a.play();if(p&&p.catch)p.catch(()=>{cur=null;});fade(a,VOL[n],ms||1200);},
   stop(ms){if(window.__FAST)return;const o=cur&&T[cur];cur=null;if(o)fade(o,0,ms||2500,()=>o.pause());},
   setMuted(v){muted=v;Object.values(T).forEach(a=>a.muted=v);},
   get now(){return cur;}};})();
@@ -1090,7 +1113,7 @@ function finishGame(){
 }
 $('bPlay').onclick=()=>newGame();
 $('bAgain').onclick=()=>newGame();
-$('bResume').onclick=()=>hide('home');
+$('bResume').onclick=()=>{hide('home');mus.play('game',1200,true);if(G)sfx.ambient(AMB[G.room]);};
 $('bSave').onclick=()=>{if(G&&!G.over&&!G.busy)showSave();};
 $('bSaveExit').onclick=exitToHome;
 $('bLoadOpen').onclick=()=>{const e=$('loadBox');e.style.display=e.style.display==='none'?'block':'none';};
@@ -1099,7 +1122,7 @@ $('bLoad').onclick=()=>{const m=$('loadMsg'),s=readCode($('codeIn').value);
  m.className='msg';m.textContent='';loadGame(s);};
 $('bHow').onclick=()=>{const e=$('how');e.style.display=e.style.display==='none'?'block':'none';};
 const mb=document.createElement('button');mb.id='muteBtn';mb.className='mini';mb.textContent=sfx.muted?'🔇':'🔊';mb.onclick=e=>{e.stopPropagation();const x=sfx.toggle();mus.setMuted(x);mb.textContent=x?'🔇':'🔊';};$('stage').appendChild(mb);
-$('menuBtn').onclick=()=>{$('bResume').style.display=(G&&!G.over)?'block':'none';$('bSave').style.display=(G&&!G.over&&!G.busy)?'block':'none';show('home');};
+$('menuBtn').onclick=()=>{mus.play('intro',900);sfx.stop();$('bResume').style.display=(G&&!G.over)?'block':'none';$('bSave').style.display=(G&&!G.over&&!G.busy)?'block':'none';show('home');};
 renderVerbs();
 requestAnimationFrame(frame);
 window.__sayTest=(w,t)=>{window.__FAST=0;say(w,t)};window.__sayTest=(w,t)=>{window.__FAST=0;say(w,t)};window.__dbg={get G(){return G;},get ROOM(){return ROOM;},makeCode,readCode,loadGame,showSave,ROOMS,execute,ITEMS,go,newGame,callDaniele};
