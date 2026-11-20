@@ -745,7 +745,7 @@ async function lungoSamp(){
 }
 /* ---------- sfondi illustrati e hotspot riallineati ---------- */
 const DIM={camera:[1652,952],via:[1376,768],lungomare:[1376,768],ristorante:[1376,768],colonia:[1376,768],molo:[1376,768],cittasamp:[1678,937]};
-const BG={};['camera','via','lungomare','ristorante','colonia','molo','molosamp','casadan','cittasamp','lungomaresamp'].forEach(k=>{const i=new Image();i.src='img/'+k+'.jpg';BG[k]=i;});
+const BG={};['camera','via','lungomare','ristorante','colonia','molo','molosamp','casadan','cittasamp','lungomaresamp'].forEach(k=>{const i=new Image();i.src=''+k+'.jpg';BG[k]=i;});
 function bg(k){const i=BG[k];if(i&&i.complete&&i.naturalWidth){cx.imageSmoothingEnabled=true;cx.imageSmoothingQuality='high';cx.drawImage(i,0,0,W,H);return true;}return false;}
 function newDraw(id,key,extra){const o=ROOMS[id].draw;ROOMS[id].draw=ts=>{const k=typeof key==='function'?key():key;if(bg(k)){if(extra)extra(ts);}else o(ts);};}
 function fix(room,spec){const[w,h]=DIM[room];const R=ROOMS[room];
@@ -996,7 +996,7 @@ window.sfx=sfx;
 
 /* ---------- musica ---------- */
 const mus=(()=>{const T={};let cur=null,muted=false;const VOL={intro:.55,game:.16,credits:.7};
- const SRC={intro:'audio/intro.mp3',game:'audio/ingame.mp3',credits:'audio/credits.mp3'};
+ const SRC={intro:'intro.mp3',game:'ingame.mp3',credits:'credits.mp3'};
  function get(n){if(!T[n]){const a=new Audio(SRC[n]);a.loop=n!=='credits';a.preload='auto';T[n]=a;}return T[n];}
  function fade(a,to,ms,end){const from=a.volume,t0=performance.now();const iv=setInterval(()=>{const k=Math.min(1,(performance.now()-t0)/ms);a.volume=Math.max(0,Math.min(1,from+(to-from)*k));if(k>=1){clearInterval(iv);end&&end();}},50);}
  return{
