@@ -328,8 +328,8 @@ const ROUNDS2=[
 const ITEMS={
  perculi:{id:'perculi',name:'Quaderno dei Perculi',ico:'📓',acts:{look:async()=>{
    const l=[];[1,2,3].forEach(i=>{if(G.p[i])l.push('«'+TAUNT[i]+'» → '+PT[i]);});
-   if(!l.length){await D("Il mio quaderno dei Perculi. Per ora è vuoto, come l'album.");return;}
-   await D("Il quaderno dei Perculi. Ho imparato "+l.length+" mosse su 3.");
+   if(!l.length){await D("Non so cosa sia questo quaderno.");return;}
+   await D("Il quaderno dei Perculi. Ho imparato "+l.length+" "+(l.length==1?"mossa":"mosse")+" su 3.");
    await choose(l.concat(['Chiudi il quaderno']));}}},
  euro:{id:'euro',name:'50 euro',ico:'💶',acts:{look:"Cinquanta euro. Il prezzo di un'informazione."}},
  telefono:{id:'telefono',name:'Telefono',ico:'📱',acts:{look:"Il mio telefono. Ha il numero di Daniele.",use:()=>callDaniele()}},
