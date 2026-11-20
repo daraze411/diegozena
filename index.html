@@ -315,6 +315,7 @@ const PT={
  3:"Sì, quando il trofeo durava il tempo di un bon bon."
 };
 const TAUNT={1:'Amici di Gravina, dovreste essere in serie C!',2:'Noi abbiamo nove scudetti!',3:'Sono comunque nove scudetti!'};
+const UNL=()=>!!(G.F.dav1&&G.F.marco_ok);
 const DEF=()=>D(rnd(['NO.','Forza Samp!','(parolaccia)!']));
 const ROUNDS2=[
  ['Genoano palle sudate.','Genoano sfigato.','A'],
@@ -333,7 +334,7 @@ const ITEMS={
  euro:{id:'euro',name:'50 euro',ico:'💶',acts:{look:"Cinquanta euro. Il prezzo di un'informazione."}},
  telefono:{id:'telefono',name:'Telefono',ico:'📱',acts:{look:"Il mio telefono. Ha il numero di Daniele.",use:()=>callDaniele()}},
  orologio:{id:'orologio',name:'Orologio da taschino',ico:'⌚',acts:{look:"Un gentleman non esce senza.",use:async()=>{const n=new Date();await D("Le "+n.getHours()+":"+String(n.getMinutes()).padStart(2,'0')+". Un gentleman non è mai in ritardo.");}}},
- sciarpa:{id:'sciarpa',name:'Sciarpa rossoblu',ico:'🧣',acts:{look:"Una sciarpa rossoblu. Mi viene l'orticaria solo a guardarla.",use:async()=>{if(!G.F.dav1){await DEF();return;}G.wear=!G.wear;if(G.wear){await D("(a bassa voce) Mi sento morire...");await D("Però funziona: sembro uno di loro.");}else await D("Via. Finalmente respiro.");renderInv();}}},
+ sciarpa:{id:'sciarpa',name:'Sciarpa rossoblu',ico:'🧣',acts:{look:"Una sciarpa rossoblu. Mi viene l'orticaria solo a guardarla.",use:async()=>{if(!UNL()){await DEF();return;}G.wear=!G.wear;if(G.wear){await D("(a bassa voce) Mi sento morire...");await D("Però funziona: sembro uno di loro.");}else await D("Via. Finalmente respiro.");renderInv();}}},
  limone:{id:'limone',name:'Limone',ico:'🍋',acts:{look:"Un limone. Il branzino ne ha bisogno."}},
  caricabatterie:{id:'caricabatterie',name:'Caricabatterie',ico:'🔌',acts:{look:"Il caricabatterie di un turista milanese."}},
  volantino:{id:'volantino',name:'Volantino cifrato',ico:'📄',acts:{look:()=>G.F.decoded?D("QFTUP, cioè PESTO. La parola d'ordine dei genoani."):D("Un volantino con scritto QFTUP. Non è una parola che conosco. Forse conviene chiamare Daniele.")}}
@@ -456,8 +457,8 @@ ROOMS.lungomare={id:'lungomare',walk:[108,172],draw:DRAW.lungomare,
     'give:caricabatterie':()=>gianCharger(),'use:caricabatterie':()=>gianCharger(),
     'give:euro':()=>gianMoney(),'use:euro':()=>gianMoney(),
     take:"Troppo alto per essere trasportato."}),
-  H_('sentinella','Sentinella genoana',[272,98,26,44],[258,142],{look:"Una sentinella genoana. Non sembra molto sveglia.",talk:()=>G.F.dav1?sentinel():DEF(),take:"Meglio non toccarla.",use:"Meglio non toccarla."}),
-  H_('esc_r','Verso il molo',[306,96,14,84],[298,146],{look:"Il molo. La sentinella blocca il passaggio."},{exit:['molo',24,146],cond:()=>G.F.passed?true:(G.F.dav1?()=>sentinel():"Di là ci sono solo genoani. Prima cerco qualche indizio.")})
+  H_('sentinella','Sentinella genoana',[272,98,26,44],[258,142],{look:"Una sentinella genoana. Non sembra molto sveglia.",talk:()=>UNL()?sentinel():D("Con questo non ci parlo."),take:"Meglio non toccarla.",use:"Meglio non toccarla."}),
+  H_('esc_r','Verso il molo',[306,96,14,84],[298,146],{look:"Il molo. La sentinella blocca il passaggio."},{exit:['molo',24,146],cond:()=>G.F.passed?true:(UNL()?()=>sentinel():rnd(["Non ho interesse ad andare verso il molo.","Non voglio andare là."]))})
  ]};
 
 ROOMS.ristorante={id:'ristorante',walk:[112,174],draw:DRAW.ristorante,
@@ -615,12 +616,14 @@ async function secret(w,n){
  learn(n);
 }
 async function sentinel(){
- const F=G.F;
+ const F=G.F;if(!UNL()){await D("Con questo non ci parlo.");return;}
  if(F.passed){await S('sen',"Passa, fratello.");return;}
  if(!G.wear){
   if(!F.sent1){F.sent1=1;await D("Non ci parlo con quello io.");await S('sen',"È la stella che vogliam!");}
   await S('sen',"Fermo! Questo è territorio genoano. Dov'è la tua sciarpa?");
-  await D("(parolaccia) sì la metto... yuppi... (a bassa voce) topo...");return;}
+  if(has('sciarpa'))await D("(parolaccia) sì la metto... yuppi... (a bassa voce) topo...");
+  else await D("Una sciarpa? Non ce l'ho... (a bassa voce) per fortuna.");
+  return;}
  await S('sen',"ALT! PAROLA D'ORDINE!");
  for(;;){
   const i=await choose(['AGUILERA','PESTO','GRIFONE','LA NORD']);
@@ -811,7 +814,7 @@ newDraw('lungomaresamp','lungomaresamp');
 const KEY={
  camera:{cassetto:F=>!F.tel,porta:F=>has('telefono')},
  via:{uscitav:F=>F.dan_done},
- lungomare:{limoni:F=>!F.limone,lampione:F=>!F.scarf,ristoporta:F=>!F.dav_ok,gianluca:F=>!F.gian_ok,sentiero:F=>F.gian_ok&&!F.marco_ok,sentinella:F=>F.dav1&&!F.passed,esc_r:F=>F.passed},
+ lungomare:{limoni:F=>!F.limone,lampione:F=>!F.scarf,ristoporta:F=>!F.dav_ok,gianluca:F=>!F.gian_ok,sentiero:F=>F.gian_ok&&!F.marco_ok,sentinella:F=>F.dav1&&F.marco_ok&&!F.passed,esc_r:F=>F.passed},
  ristorante:{davide:F=>!F.dav_ok,carica:F=>F.dav_ok&&!has('caricabatterie')&&!F.gian_charged,esc_ri:F=>F.dav_ok},
  colonia:{marco:F=>!F.marco_ok,pozza:F=>F.marco_ask&&!F.sporco,volantinoh:F=>F.marco_ok&&!has('volantino')&&!F.vol,esc_c:F=>F.marco_ok&&has('volantino')},
  molo:{pato:()=>G.p[1]&&G.p[2]&&G.p[3]&&!G.F.pato_done}
