@@ -463,7 +463,7 @@ ROOMS.lungomare={id:'lungomare',walk:[108,172],draw:DRAW.lungomare,
     look:"Gianluca. Alto come un lampione e attaccato al telefono.",
     talk:async()=>{
       const F=G.F;
-      if(F.gian_ok){await D("Gianlu...");await S('gian',"Mh.");return;}
+      if(F.gian_ok){await D("Gianlu...");await S('gian',"Marco sicuramente sa qualcosa. Lo trovi a fare urbex, proprio qua sotto.");return;}
       if(F.gian_charged){await D("Dove lo trovo Marco?");await S('gian',"boh...");await D("Magari con un po' di incentivo ti torna la voce...");return;}
       if(!F.gian_t){F.gian_t=1;await D("Gianlu...");await S('gian',"Mh. Non ora, ho l'1%.");}
       else{await D("Gianluca!");await S('gian',"boh?!");}
@@ -568,7 +568,7 @@ async function gianCharger(){
  rmItem('caricabatterie');F.gian_charged=1;
  await D("Gianlu, tieni: un caricabatterie.");
  await S('gian',"(senza alzare gli occhi) Grazie.");
- await S('gian',"Ho visto un tizio con la faccia da scemo andare verso il molo.");
+ await S('gian',"Ah pà, prima ho visto un tizio con la faccia da scemo che girava da queste parti.");
  await S('gian',"Diceva \"Sono il comandante Pato, Camogli è mia\", ma poi non ho capito bene, scrollavo TikTok.");
  await S('gian',"Marco sicuramente ne sa di più.");
  await D("Dove lo trovo Marco?");
