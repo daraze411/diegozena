@@ -118,6 +118,7 @@ a.btn{display:block;text-align:center;text-decoration:none;color:#fff;background
   <button class="big" id="bSave" style="display:none">Salva ed esci</button>
   <button class="big" id="bLoadOpen">Carica partita da codice</button>
   <div id="loadBox" style="display:none"><input type="text" id="codeIn" placeholder="Incolla qui il codice che inizia con DZP1-"><button class="big" id="bLoad">Carica</button><div class="msg" id="loadMsg"></div></div>
+  <button class="big" id="bFs" style="display:none">Schermo intero</button>
   <button class="big" id="bHow">Come si gioca</button>
   <div id="how" style="display:none"><p class="long">Tocca (o clicca) un punto per far camminare Diego. Per le azioni scegli un verbo (Guarda, Prendi, Usa, Parla, Apri, Dai) e poi tocca l'oggetto o il personaggio. Per "Usa" e "Dai" con un oggetto dell'inventario: scegli il verbo, tocca l'oggetto in inventario e poi il bersaglio. In alternativa tieni premuto (o clicca col tasto destro) su un oggetto: compare il menù con le azioni possibili. Se ti blocchi, c'è il telefono: "Chiama Daniele". Una partita dura una decina di minuti.</p></div>
 </div></div>
@@ -1159,6 +1160,10 @@ $('bLoadOpen').onclick=()=>{const e=$('loadBox');e.style.display=e.style.display
 $('bLoad').onclick=()=>{const m=$('loadMsg'),s=readCode($('codeIn').value);
  if(!s){m.className='msg err';m.textContent='Codice non valido: controlla di averlo copiato per intero, a partire da '+PREF+'.';return;}
  m.className='msg';m.textContent='';loadGame(s);};
+(()=>{const de=document.documentElement,rq=de.requestFullscreen||de.webkitRequestFullscreen,b=$('bFs');if(!rq||!document.fullscreenEnabled&&document.webkitFullscreenEnabled===undefined&&!de.webkitRequestFullscreen)return;b.style.display='block';
+ const upd=()=>{b.textContent=(document.fullscreenElement||document.webkitFullscreenElement)?'Esci dallo schermo intero':'Schermo intero';};
+ b.onclick=()=>{try{if(document.fullscreenElement||document.webkitFullscreenElement){(document.exitFullscreen||document.webkitExitFullscreen).call(document);}else{const p=rq.call(de);const lk=()=>{try{screen.orientation&&screen.orientation.lock&&screen.orientation.lock('landscape').catch(()=>{});}catch(e){}};if(p&&p.then)p.then(lk).catch(()=>{});else lk();}}catch(e){}};
+ document.addEventListener('fullscreenchange',()=>{upd();setTimeout(()=>window.dispatchEvent(new Event('resize')),150);});document.addEventListener('webkitfullscreenchange',upd);upd();})();
 $('bHow').onclick=()=>{const e=$('how');e.style.display=e.style.display==='none'?'block':'none';};
 const mb=document.createElement('button');mb.id='muteBtn';mb.className='mini';mb.textContent=sfx.muted?'🔇':'🔊';mb.onclick=e=>{e.stopPropagation();const x=sfx.toggle();mus.setMuted(x);mb.textContent=x?'🔇':'🔊';};$('stage').appendChild(mb);
 $('menuBtn').onclick=()=>{mus.play('intro',900);sfx.stop();$('bResume').style.display=(G&&!G.over)?'block':'none';$('bSave').style.display=(G&&!G.over&&!G.busy)?'block':'none';show('home');};
