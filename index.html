@@ -39,6 +39,7 @@ button:hover{background:#3a2f66}
 #inv button.sel{outline:2px solid #ffd23f}
 #choices{display:grid;gap:5px;margin-top:6px}
 #choices button{text-align:left;padding:9px 10px;font-size:14px;color:#9be3ff}
+#choices input{padding:9px 10px;font-size:16px;font-family:PX,monospace;text-transform:uppercase;color:#fff;background:#0b0820;border:2px solid #e9c46a;border-radius:8px;outline:none}
 #ctx{position:fixed;z-index:30;background:#1a1230;border:2px solid #ffd23f;border-radius:8px;padding:4px;min-width:130px}
 #ctx button{display:block;width:100%;text-align:left;margin:2px 0;color:#ffd23f;font-weight:700}
 #ctx .t{color:#9be37c;font:700 12px ui-monospace,monospace;padding:3px 6px}
@@ -339,7 +340,7 @@ const ITEMS={
  sciarpa:{id:'sciarpa',name:'Sciarpa rossoblu',ico:'🧣',acts:{look:"Una sciarpa rossoblu. Mi viene l'orticaria solo a guardarla.",use:async()=>{if(!UNL()){await DEF();return;}G.wear=!G.wear;if(G.wear){await D("(a bassa voce) Mi sento morire...");await D("Però funziona: sembro uno di loro.");}else await D("Via. Finalmente respiro.");renderInv();}}},
  limone:{id:'limone',name:'Limone',ico:'🍋',acts:{look:"Un limone. Il branzino ne ha bisogno."}},
  caricabatterie:{id:'caricabatterie',name:'Caricabatterie',ico:'🔌',acts:{look:"Il caricabatterie di un turista milanese."}},
- volantino:{id:'volantino',name:'Volantino cifrato',ico:'📄',acts:{look:async()=>{await showFlyer();return G.F.decoded?D("QFTUP, cioè PESTO. La parola d'ordine dei genoani."):D("Un volantino con scritto QFTUP. Non è una parola che conosco. Forse conviene chiamare Daniele.")}}}
+ volantino:{id:'volantino',name:'Volantino cifrato',ico:'📄',acts:{look:async()=>{await showFlyer();return D("Un volantino con scritto QFTUP. Non è una parola che conosco. Servirebbe l'aiuto di un nerd.")}}}
 };
 for(const k in ITEMS)ITEMS[k].isItem=true;
 function addItem(id){if(!has(id)){G.inv.push(id);renderInv();toast('Preso: '+ITEMS[id].name);if(window.sfx)sfx.pick();}}
@@ -386,6 +387,17 @@ function choose(opts){
   $('panel').style.display='none';box.hidden=false;
  });
 }
+function askWord(){return new Promise(res=>{
+ if(window.__type!==undefined){res(window.__type);return;}
+ const box=$('choices');box.innerHTML='';
+ const inp=document.createElement('input');inp.type='text';inp.maxLength=20;inp.placeholder="Scrivi la parola d'ordine";inp.autocomplete='off';inp.spellcheck=false;inp.autocapitalize='characters';
+ const ok=document.createElement('button');ok.textContent='OK';
+ const no=document.createElement('button');no.textContent='Lascia stare';
+ const fin=v=>{box.hidden=true;$('panel').style.display='';res(v);};
+ ok.onclick=()=>fin(inp.value);no.onclick=()=>fin(null);
+ inp.onkeydown=e=>{if(e.key==='Enter')fin(inp.value);};
+ box.append(inp,ok,no);$('panel').style.display='none';box.hidden=false;setTimeout(()=>inp.focus(),60);
+});}
 async function showTitle(){const e=$('titleCard');e.style.opacity=1;await sleep(4200);e.style.opacity=0;await sleep(800);}
 
 /* ---------- stanze ---------- */
@@ -463,7 +475,7 @@ ROOMS.lungomare={id:'lungomare',walk:[108,172],draw:DRAW.lungomare,
   H_('esc_r','Verso il molo',[306,96,14,84],[298,146],{look:"Il molo. La sentinella blocca il passaggio."},{exit:['molo',24,146],cond:()=>G.F.passed?true:(UNL()?()=>sentinel():rnd(["Non ho interesse ad andare verso il molo.","Non voglio andare là."]))})
  ]};
 
-ROOMS.ristorante={id:'ristorante',walk:[112,174],draw:DRAW.ristorante,
+ROOMS.ristorante={id:'ristorante',walk:[117,174],draw:DRAW.ristorante,
  npc:{dav:{x:108,y:114,k:'davide',face:1,vis:()=>true}},
  hot:[
   H_('esc_ri','Verso il lungomare',[306,48,14,130],[302,140],{look:"La porta sul lungomare."},{exit:['lungomare',44,126]}),
@@ -491,7 +503,7 @@ ROOMS.colonia={id:'colonia',walk:[110,174],draw:DRAW.colonia,
   H_('cancello','Cancello',[246,56,50,58],[250,130],{look:()=>D(G.F.marco_ok?"Aperto.":"Chiuso."),open:()=>D(G.F.marco_ok?"È già aperto.":"Chiuso. Marco mi guarda storto.")}),
   H_('graffiti','Graffiti',[92,36,100,46],[140,128],{look:"Graffiti e uno sticker rossoblu appiccicato. Provocazione."}),
   H_('volantinoh','Volantino',[258,78,20,22],[262,128],{look:"Un volantino appeso nel buio.",
-    take:async()=>{addItem('volantino');G.F.vol=1;await showFlyer();await D("Un volantino. C'è scritto: QFTUP.");await D("Cos'è sto schifo? Ah, la loro gradinata. Mi sanguinano gli occhi...");await D("Non è una parola che conosco. Forse conviene chiamare Daniele.");}},{vis:()=>G.F.marco_ok&&!has('volantino')&&!G.F.vol})
+    take:async()=>{addItem('volantino');G.F.vol=1;await showFlyer();await D("Un volantino. C'è scritto: QFTUP.");await D("Cos'è sto schifo? Ah, la loro gradinata. Mi sanguinano gli occhi...");await D("Non è una parola che conosco. Servirebbe l'aiuto di un nerd.");}},{vis:()=>G.F.marco_ok&&!has('volantino')&&!G.F.vol})
  ]};
 
 ROOMS.molo={id:'molo',walk:[112,174],draw:DRAW.molo,
@@ -607,16 +619,16 @@ async function marcoTalk(){
   await S('mar',"Ecco. Ora sì che sei dei miei.");
   await S('mar',"So perché sei qua, me l'ha detto Davide, m'ha chiamato poco fa.");
   await S('mar',"Ti insegno una mossa di urbex.");
-  await secret('mar',2);
-  await S('mar',"Il cancello è aperto. Dentro c'è un volantino strano, prendilo. Se vuoi entrare dai genoani ti serve una sciarpa rossoblu.");
-  await S('mar',"E poi devi andare al molo a combattere contro il comandante Pato.");return;}
+  await secret('mar',2,"Ascolta bene.");
+  await S('mar',"Ora vai dal cancello. C'è un volantino strano, prendilo.");
+  await S('mar',"E poi recati al molo. Il capo di quegli scalda farinate si trova lì.");return;}
  await S('mar',"Dentro c'è un volantino. Prendilo e portalo a chi sa leggere certe cose.");
 }
 function showFlyer(){return new Promise(res=>{const e=$('flyer');e.style.display='flex';if(speech)speech.done();const done=()=>{clearTimeout(tm);e.style.display='none';e.onpointerdown=null;res();};const tm=setTimeout(done,window.__FAST?5:60000);e.onpointerdown=done;});}
 function timeCard(t){return new Promise(res=>{const e=$('tcard');e.textContent=t;e.style.display='flex';if(speech)speech.done();
  const done=()=>{clearTimeout(tm);e.style.display='none';e.onpointerdown=null;res();};const tm=setTimeout(done,window.__FAST?5:2600);e.onpointerdown=done;});}
-async function secret(w,n){
- await S(w,"Ascolta bene, te la spiego io.");
+async function secret(w,n,intro){
+ await S(w,intro||"Ascolta bene, te la spiego io.");
  await timeCard("30 secondi dopo...");
  await S(w,"Capito?");
  await D("(a bassa voce) Capito.");
@@ -634,8 +646,9 @@ async function sentinel(){
   return;}
  await S('sen',"ALT! PAROLA D'ORDINE!");
  for(;;){
-  const i=await choose(['AGUILERA','PESTO','GRIFONE','LA NORD']);
-  if(i===1)break;
+  const w=await askWord();
+  if(w===null){await D("Meglio che ci pensi ancora.");return;}
+  if(String(w).trim().toUpperCase()==='PESTO')break;
   G.err++;await S('sen',"Sbagliato! Riprova.");
  }
  F.passed=1;
@@ -646,19 +659,24 @@ async function sentinel(){
 async function callDaniele(){
  if(!has('telefono')){await D("Non ho il telefono.");return;}
  const F=G.F;if(!F.parents){await D("Non ho motivo di chiamarlo, ora.");return;}
- if(has('volantino')&&!F.decoded){
-  if(!F.hint1){
+ if(has('volantino')&&!F.passed){
+  F.hn=F.hn||0;
+  if(F.hn===0){
    await choose(["Ho un volantino con scritto QFTUP"]);
    await D("Daniele, ho un volantino con scritto QFTUP.");
-   await S('dan',"Hmm. Quelle lettere sono tutte spostate allo stesso modo. Guarda l'alfabeto e prova a fare un passo indietro.");
+   await S('dan',"Hmm. Quelle lettere non sono a caso. Sembrano avere un ordine nascosto.");
    await S('dan',"Intanto ti insegno la terza mossa del Perculo.");
    await secret('dan',3);
-   F.hint1=1;return;}
-  await choose(["Non ho capito l'indizio"]);
-  await D("Daniele, non ho capito l'indizio.");
-  await S('dan',"Ogni lettera è avanzata di una posizione: la Q diventa P, la F diventa E, la T diventa S, la U diventa T, la P diventa O.");
-  await D("PESTO. La parola d'ordine!");
-  F.decoded=1;return;
+   F.hn=1;F.hint1=1;return;}
+  if(F.hn===1){
+   await choose(["Non ho capito l'indizio"]);
+   await D("Daniele, non ho capito l'indizio.");
+   await S('dan',"Pensa all'alfabeto: ogni lettera è stata spostata sempre della stessa quantità.");
+   F.hn=2;return;}
+  await choose(["Ancora non ci arrivo"]);
+  await D("Daniele, ancora non ci arrivo.");
+  await S('dan',"Ogni lettera è avanzata di un solo posto: per leggere la parola torna indietro di uno. La Q diventa la lettera prima, e così via. La parola la scrivi tu alla sentinella.");
+  F.hn=3;return;
  }
  const opts=["Daniele, ho bisogno di una mano!","Niente, scusa"];
  const i=await choose(opts);
@@ -669,8 +687,8 @@ async function callDaniele(){
  else if(!G.p[1])h="Davide ha sempre qualcosa da fare: fagli un favore.";
  else if(!F.gian_ok)h="Gianluca sa dove andare. Ma come tutti i ragazzi della sua età, gratis non parla.";
  else if(!G.p[2])h="Marco non ama l'eleganza in certi contesti.";
- else if(!has('volantino')&&!F.decoded)h="Marco non ti ha parlato di un volantino? Prendilo.";
- else if(!F.passed)h="Indossa la sciarpa e dille la parola d'ordine.";
+ else if(!has('volantino'))h="Marco non ti ha parlato di un volantino? Prendilo.";
+ else if(!F.passed)h="Indossa la sciarpa e scrivigli la parola d'ordine.";
  else h="Usa i Perculi giusti al momento giusto.";
  await S('dan',h);
 }
@@ -679,6 +697,10 @@ async function duel(){
  if(!(G.p[1]&&G.p[2]&&G.p[3])){await S('pato',"Ah, un doriano! Ma non sai nemmeno perculare. Torna quando sei pronto!");await D("Mi serve più preparazione.");return;}
  if(F.pato_done){await S('pato',"Buaaaa...");return;}
  await S('pato',"DIEGO ZENA! ALLORA IL NANO AVEVA RAGIONE!");
+ await S('pato',"Io ti distruggerò, poi conquisterò Camogli e poi... E poi... Improvviserò.");
+ await S('pato',"(a bassa voce) Non ho un piano...");
+ await D("Coso, facciamo presto su...");
+ await S('pato',"Ha inizio la sfida del Perculo!");
  await S('pato',"Voi siete ospiti al Ferraris!");
  await D("Bè, almeno grazie a noi quel campo ha visto la Coppa dei Campioni, per esempio.");
  await S('pato',"Uff... Colpito. Ma non è finita!");
@@ -784,7 +806,7 @@ const PSC=new Image();PSC.src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACg
 newDraw('lungomare','lungomare',()=>{const k=320/1280;if(G.F.scarf&&PSC.complete&&PSC.naturalWidth)cx.drawImage(PSC,562*k,189*k,PSC.naturalWidth*k,PSC.naturalHeight*k);if(G.F.limone&&PLM.complete&&PLM.naturalWidth)cx.drawImage(PLM,830*k,259*k,PLM.naturalWidth*k,PLM.naturalHeight*k);});
 fix('lungomare',{ristoporta:[120,262,225,418],mare:[345,240,755,395],case:[885,55,1376,420],sentiero:[400,630,1020,768],limoni:[878,270,1003,430],lampione:[628,165,678,452]});
 
-newDraw('ristorante','ristorante',()=>{if(!has('caricabatterie')&&!G.F.gian_charged){cx.fillStyle='#111';cx.fillRect(64,78.4,9,3.4);cx.fillStyle='#555';cx.fillRect(65,79.1,3,1);cx.strokeStyle='#111';cx.lineWidth=.6;cx.beginPath();cx.moveTo(73,80.3);cx.lineTo(77,81.6);cx.stroke();}});
+newDraw('ristorante','ristorante',()=>{if(!has('caricabatterie')&&!G.F.gian_charged){cx.fillStyle='#111';cx.fillRect(64,78.4,9,3.4);cx.fillStyle='#555';cx.fillRect(65,79.1,3,1);cx.strokeStyle='#111';cx.lineWidth=.6;cx.beginPath();cx.moveTo(73,80.3);cx.lineTo(77,81.6);cx.stroke();}});ROOMS.ristorante.sc=1.5;
 fix('ristorante',{esc_ri:[1290,195,1376,470],cucina:[715,152,910,472],acquario:[920,160,1213,332],lavagna:[60,82,335,282],carica:[262,322,340,370]});
 
 newDraw('colonia','colonia',()=>{if(G.F.marco_ok&&!has('volantino')&&!G.F.vol){cx.save();cx.translate(264,79);cx.rotate(-.06);cx.fillStyle='#f6f6f1';cx.strokeStyle='#333';cx.lineWidth=.35;cx.fillRect(-3,-4,6,8);cx.strokeRect(-3,-4,6,8);cx.fillStyle='#999';[-2.4,-.8,.8,2.4].forEach(y=>cx.fillRect(-2,y,4,.5));cx.restore();}});
@@ -1056,7 +1078,7 @@ function frame(ts){
   update(dt);cx.clearRect(0,0,W,H);ROOM.draw(ts);
   const ents=[];
   for(const k in ROOM.npc){const n=ROOM.npc[k];if(!n.vis||n.vis())ents.push({y:n.y,f:()=>person(n.x,n.y,n.k,ts,false,n.face,n.ex?n.ex():null)});}
-  if(!ROOM.noDiego)ents.push({y:G.dy,f:()=>person(G.dx,G.dy,'diego',ts,G.moving,G.face,{scarf:G.wear?['#b3122c','#1f3f9f']:null,mud:!!G.F.sporco})});
+  if(!ROOM.noDiego)ents.push({y:G.dy+1000,f:()=>person(G.dx,G.dy,'diego',ts,G.moving,G.face,{scarf:G.wear?['#b3122c','#1f3f9f']:null,mud:!!G.F.sporco})});
   if(window.glowDraw)glowDraw(ts);
   ents.sort((a,b)=>a.y-b.y).forEach(e=>e.f());
   if(speech)placeSpeech(speech.who);
